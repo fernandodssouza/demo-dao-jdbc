@@ -4,7 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import db.DB;
 import db.DbException;
@@ -77,6 +80,57 @@ public class SellerDaoJDBC implements SellerDao {
 			DB.closeStatement(ps);
 		}
 	}
+	
+	@Override
+	public List<Seller> findByDepartment(Department dep) {
+		String sql = "SELECT seller.*, department.Name AS depName FROM seller INNER JOIN department ON seller.DepartmentId = ? WHERE department.Id = ? ORDER BY Name";
+		
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		
+		try {
+			//Faz a conexão com o banco de dados:
+			conn = DB.getConnection();
+			
+			//Prepara a consulta:
+			ps = conn.prepareStatement(sql);
+			
+			//Atribui o parâmentro id como filtro de busca: 
+			ps.setInt(1, dep.getId());
+			ps.setInt(2, dep.getId());
+			
+			rs = ps.executeQuery();
+			
+			if(rs.isBeforeFirst()) {
+				
+				List<Seller> listSeller = new ArrayList<>();
+				Map<Integer, Department> map = new HashMap<>();
+				
+				while(rs.next()) {
+					
+					Department department = map.get(rs.getInt("DepartmentId"))
+;					
+					if(department == null) {
+						department = instantiateDepartment(rs);
+						map.put(rs.getInt("DepartmentId"), department);
+					}
+					
+					listSeller.addLast(instantiateSeller(rs, department));;
+				}
+				
+				return listSeller;
+				
+			}else {
+				return null;
+			}
+		
+		}catch(SQLException e) {
+			throw new DbException(e.getMessage());
+		}finally {
+			DB.closeResultSet(rs);
+			DB.closeStatement(ps);
+		}
+	}
 
 	@Override
 	public List<Seller> findAll() {
@@ -105,5 +159,7 @@ public class SellerDaoJDBC implements SellerDao {
 		
 		return seller;
 	}
+
+	
 	
 }
