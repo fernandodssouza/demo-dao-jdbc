@@ -134,8 +134,39 @@ public class SellerDaoJDBC implements SellerDao {
 
 	@Override
 	public List<Seller> findAll() {
-		// TODO Auto-generated method stub
-		return null;
+		String sql = "SELECT seller.*, department.Name AS depName FROM seller INNER JOIN department ON seller.DepartmentId = department.Id ORDER BY Name";
+		
+		PreparedStatement st = null;
+		ResultSet rs = null;
+		
+		List<Seller> sellers = new ArrayList<>();
+		
+		try {
+			conn = DB.getConnection();
+			st = conn.prepareStatement(sql);
+			rs = st.executeQuery();
+			
+			Map<Integer, Department> map = new HashMap<>();
+						
+			while(rs.next()) {
+				//instanciar o departamento, se não estiver instanciado;
+				Department dep = map.get(rs.getInt("DepartmentId"));
+				if(dep == null) {
+					dep = instantiateDepartment(rs);
+					map.put(rs.getInt("DepartmentId"), dep);
+				}
+				
+				//Instanciar o Seller
+				sellers.add(instantiateSeller(rs, dep));
+			}
+			
+			return sellers;
+		}catch(SQLException e) {
+			throw new DbException(e.getMessage());
+		}finally{
+			DB.closeResultSet(rs);
+			DB.closeStatement(st);
+		}
 	}
 	
 	//Função para instanciar um departamento
@@ -159,7 +190,4 @@ public class SellerDaoJDBC implements SellerDao {
 		
 		return seller;
 	}
-
-	
-	
 }
