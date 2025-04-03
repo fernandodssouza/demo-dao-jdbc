@@ -1,5 +1,6 @@
 package Application;
 
+import java.sql.Date;
 import java.util.List;
 
 import db.DB;
@@ -40,6 +41,13 @@ public class Program {
 		}else {
 			System.out.println("No one Seller was find!");
 		}
+		
+		
+		Seller sel = new Seller("Fernando Souza","fernando.davidss23@gmail.com", Date.valueOf("1995-1-15"), 4325.0, dep);
+		
+		DaoFactory.createSellerDao().insert(sel);
+		
+		System.out.println(sel);
 		
 		DB.closeConnection();
 	}

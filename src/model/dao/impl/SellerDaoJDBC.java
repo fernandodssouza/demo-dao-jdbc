@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +27,40 @@ public class SellerDaoJDBC implements SellerDao {
 	
 	@Override
 	public void insert(Seller obj) {
-		// TODO Auto-generated method stub
+		String sql = "INSERT INTO seller(Name, Email, BirthDate, BaseSalary, DepartmentId) VALUES (?, ?, ?, ?, ?)";
 		
+		PreparedStatement st = null;
+		
+		if(searchByEmail(obj.getEmail(), st)) {
+			System.out.println("Alread exists a seller with this email!");
+		}else {
+		
+			try {			
+				st = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+				
+				st.setString(1, obj.getName());
+				st.setString(2, obj.getEmail());
+				st.setDate(3, obj.getDate());
+				st.setDouble(4, obj.getBaseSalary());
+				st.setInt(5, obj.getDepartment().getId());
+				
+				int rowsAffected = st.executeUpdate();
+				
+				if(rowsAffected > 0) {
+					ResultSet rs = st.getGeneratedKeys();
+					if(rs.next()) {
+						obj.setId(rs.getInt(1));
+					}
+				}else {
+					throw new DbException("Fallure while trying to insert data! No rows affected!");
+				}
+				
+			}catch(SQLException e) {
+				throw new DbException(e.getMessage());
+			}finally {
+				DB.closeStatement(st);
+			}
+		}
 	}
 
 	@Override
@@ -39,7 +72,6 @@ public class SellerDaoJDBC implements SellerDao {
 	@Override
 	public void deleteById(int id) {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
@@ -189,5 +221,32 @@ public class SellerDaoJDBC implements SellerDao {
 		seller.setDepartment(dep);
 		
 		return seller;
+	}
+	
+	private boolean searchByEmail(String email, PreparedStatement st) {
+		String sql = "SELECT * FROM seller WHERE Email = ?";
+		ResultSet rs = null;
+		boolean result;
+		
+		try {
+			st = conn.prepareStatement(sql);
+			
+			st.setString(1, email);
+			
+			rs = st.executeQuery();
+			
+			if(rs.next()) {
+				result = true;
+			}else {
+				result = false;
+			}
+			return result;
+		} catch (SQLException e) {
+			throw new DbException(e.getMessage());
+		}finally{
+			DB.closeResultSet(rs);
+			st = null;
+		}
+		
 	}
 }
