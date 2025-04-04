@@ -20,7 +20,7 @@ public class SellerDaoJDBC implements SellerDao {
 	
 	private Connection conn;
 	
-	//injeção de depencia
+	//injeção de dependencia
 	public SellerDaoJDBC(Connection conn) {
 		this.conn = conn;
 	}
@@ -31,8 +31,21 @@ public class SellerDaoJDBC implements SellerDao {
 		
 		PreparedStatement st = null;
 		
-		if(searchByEmail(obj.getEmail(), st)) {
-			System.out.println("Alread exists a seller with this email!");
+		int id = searchByEmail(obj.getEmail(), st);
+		
+		if(id > 0) {
+			//Busca os dados do Seller com mesmo email no Banco de dados:
+			Seller sellerWithTheSameEmail = findById(id);
+			
+			//Copia os dados do parametro do método e atribui a copia o mesmo id encontrado.
+			Seller auxSeller = obj;
+			auxSeller.setId(id);
+			
+			//confere se de fato é o mesmo objeto e se for, atribui ao objeto parametro o id.
+			if(auxSeller == sellerWithTheSameEmail) {
+				obj.setId(id);
+			}
+			
 		}else {
 		
 			try {			
@@ -65,13 +78,60 @@ public class SellerDaoJDBC implements SellerDao {
 
 	@Override
 	public void update(Seller obj) {
-		// TODO Auto-generated method stub
+		String sql = "UPDATE seller SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ? WHERE Id = ?";
 		
+		PreparedStatement st = null;
+		try {			
+			st = conn.prepareStatement(sql);
+			
+			st.setString(1, obj.getName());
+			st.setString(2, obj.getEmail());
+			st.setDate(3, obj.getDate());
+			st.setDouble(4, obj.getBaseSalary());
+			st.setInt(5, obj.getDepartment().getId());
+			st.setInt(6, obj.getId());
+			
+			st.executeUpdate();
+						
+		}catch(SQLException e) {
+			throw new DbException(e.getMessage());
+		}finally {
+			DB.closeStatement(st);
+		}		
 	}
 
 	@Override
 	public void deleteById(int id) {
-		// TODO Auto-generated method stub
+		String sql = "DELETE FROM seller WHERE Id = ?";
+		
+		PreparedStatement st = null;
+		
+		try {
+			conn.setAutoCommit(false);
+			
+			st = conn.prepareStatement(sql);
+			
+			st.setInt(1, id);
+			
+			int rowsAffected = st.executeUpdate();
+			
+			conn.commit();
+			
+			if(rowsAffected > 0) {
+				System.out.println("The seller ID-" + id + " was deleted!");
+			}else {
+				throw new DbException("Error while deleting!");
+			}
+		}catch(SQLException e){
+			try {
+				conn.rollback();
+			} catch (Exception e2) {
+				throw new DbException("Error while rolling back the action!");
+			}
+			e.printStackTrace();
+		}finally {
+			DB.closeStatement(st);
+		}
 	}
 
 	@Override
@@ -223,10 +283,11 @@ public class SellerDaoJDBC implements SellerDao {
 		return seller;
 	}
 	
-	private boolean searchByEmail(String email, PreparedStatement st) {
+	//Função para verificar duplicidade de email:
+	private int searchByEmail(String email, PreparedStatement st) {
 		String sql = "SELECT * FROM seller WHERE Email = ?";
 		ResultSet rs = null;
-		boolean result;
+		int result = 0;
 		
 		try {
 			st = conn.prepareStatement(sql);
@@ -236,9 +297,9 @@ public class SellerDaoJDBC implements SellerDao {
 			rs = st.executeQuery();
 			
 			if(rs.next()) {
-				result = true;
+				result = rs.getInt("Id");
 			}else {
-				result = false;
+				result = 0;
 			}
 			return result;
 		} catch (SQLException e) {
@@ -249,4 +310,5 @@ public class SellerDaoJDBC implements SellerDao {
 		}
 		
 	}
+	
 }

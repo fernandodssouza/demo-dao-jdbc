@@ -1,6 +1,5 @@
 package Application;
 
-import java.sql.Date;
 import java.util.List;
 
 import db.DB;
@@ -43,11 +42,24 @@ public class Program {
 		}
 		
 		
-		Seller sel = new Seller("Fernando Souza","fernando.davidss23@gmail.com", Date.valueOf("1995-1-15"), 4325.0, dep);
+		//Seller sel = new Seller("Leticia Moura","leticiamqds@gmail.com", Date.valueOf("1996-1-20"), 3200.0, dep);
 		
-		DaoFactory.createSellerDao().insert(sel);
+		//DaoFactory.createSellerDao().insert(sel);
 		
-		System.out.println(sel);
+		//System.out.println("\n\n\nSeller found or inserted: \n" + sel);
+		
+		DaoFactory.createSellerDao().deleteById(15);
+		DaoFactory.createSellerDao().deleteById(16);
+		
+		//sel.setBaseSalary(4325.0);
+		//sel.setDepartment(DaoFactory.createDepartmentDao().findById(4));
+		
+		//System.out.println("\n Now, changing the department from " + sel.getName());
+		//DaoFactory.createSellerDao().update(sel);
+		
+		//System.out.println("\n========== Update Seller ==========");
+		//System.out.println(sel);
+
 		
 		DB.closeConnection();
 	}
